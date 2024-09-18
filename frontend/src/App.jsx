@@ -56,7 +56,7 @@ function App() {
       const formData = new FormData();
       formData.append("image", blob, "canvas.png");
 
-      const response = await fetch("https://delightful-angel-ayazmirza54-5bae0961.koyeb.app/calculate", {
+      const response = await fetch("https://delightful-angel-ayazmirza54-5bae0961.koyeb.app:8900/calculate", {
         method: "POST",
         body: formData,
       });

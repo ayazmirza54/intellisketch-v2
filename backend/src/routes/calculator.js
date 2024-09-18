@@ -3,23 +3,23 @@ const multer = require('multer');
 const { analyzeImage } = require('../utils/imageAnalyzer');
 
 const router = express.Router();
-const upload = multer();
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('', upload.single('image'), async (req, res) => {
+router.post('/calculate', upload.single('image'), async (req, res) => {
     try {
-        const image = req.file;
-        
-        console.log('Received image:', image.originalname);
-        
-        const responses = await analyzeImage(image.buffer);
-        
-        const data = responses.map(response => response);
-        console.log('Response from analyzeImage:', data);
-        
-        res.json({ message: "Image processed", data, status: "success" });
+        if (!req.file) {
+            return res.status(400).json({ error: 'No image file uploaded' });
+        }
+
+        console.log('Received file:', req.file.originalname, 'Size:', req.file.size);
+
+        const imageBuffer = req.file.buffer;
+        const result = await analyzeImage(imageBuffer);
+
+        res.json({ data: result });
     } catch (error) {
-        console.error('Error processing image:', error);
-        res.status(500).json({ message: "Error processing image", error: error.message, status: "error" });
+        console.error('Error processing request:', error);
+        res.status(500).json({ error: 'Internal server error: ' + error.message });
     }
 });
 

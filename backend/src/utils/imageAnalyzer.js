@@ -4,16 +4,23 @@ const { GEMINI_API_KEY } = require('../config/constants');
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-async function analyzeImage(img, dictOfVars) {
-    const resizedImg = await sharp(img.buffer)
-        .resize(768, 768, { fit: 'inside' })
-        .toBuffer();
+async function analyzeImage(buffer) {
+    try {
+        console.log('Received image buffer size:', buffer.length);
 
-    const base64Image = resizedImg.toString('base64');
+        // Convert the input to PNG format with a maximum width of 1000px
+        const pngBuffer = await sharp(buffer)
+            .png()
+            .resize({ width: 1000, withoutEnlargement: true })
+            .toBuffer();
 
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        console.log('Processed PNG buffer size:', pngBuffer.length);
 
-    const prompt = `You have been given an image containing mathematical expressions, equations, or graphical problems. Your task is to analyze the image and respond accordingly.
+        const base64Image = pngBuffer.toString('base64');
+
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `You have been given an image containing mathematical expressions, equations, or graphical problems. Your task is to analyze the image and respond accordingly.
 
 1. **Mathematical Expressions**: If the image contains simple mathematical expressions (e.g., 2 + 2, 3 * 4), solve them and return the answer in the format:
    - [{"expr": "given expression", "result": calculated answer}]
@@ -35,33 +42,37 @@ async function analyzeImage(img, dictOfVars) {
 
 Please avoid using backticks or markdown formatting in your response.`;
 
-    const result = await model.generateContent([
-        prompt,
-        {
-            inlineData: {
-                mimeType: "image/png",
-                data: base64Image
+        const result = await model.generateContent([
+            prompt,
+            {
+                inlineData: {
+                    mimeType: "image/png",
+                    data: base64Image
+                }
             }
+        ]);
+
+        const response = result.response;
+        const generatedText = response.text();
+        console.log(generatedText);
+
+        let answers = [];
+        try {
+            answers = JSON.parse(generatedText);
+        } catch (e) {
+            console.error(`Error in parsing response from Gemini API: ${e}`);
         }
-    ]);
 
-    const response = result.response;
-    const generatedText = response.text();
-    console.log(generatedText);
+        console.log('returned answer ', answers);
+        for (const answer of answers) {
+            answer.assign = answer.assign || false;
+        }
 
-    let answers = [];
-    try {
-        answers = JSON.parse(generatedText);
-    } catch (e) {
-        console.error(`Error in parsing response from Gemini API: ${e}`);
+        return answers;
+    } catch (error) {
+        console.error('Error processing image:', error);
+        throw new Error('Image processing failed: ' + error.message);
     }
-
-    console.log('returned answer ', answers);
-    for (const answer of answers) {
-        answer.assign = answer.assign || false;
-    }
-
-    return answers;
 }
 
 module.exports = { analyzeImage };

@@ -1,24 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaChartBar, FaTimes } from 'react-icons/fa';
 
-function Evaluatedraw({ results, isLoading, onClose, isDarkTheme }) {
-	const renderResult = (result) => {
-		if (typeof result.result === 'string') {
-			try {
-				const parsedResult = JSON.parse(result.result);
-				return parsedResult.map((item, index) => (
-					<div key={index} className="mt-1">
-						<span className={`font-medium ${isDarkTheme ? 'text-green-400' : 'text-green-600'}`}>
-							Answer: {item.expr} = {item.result}
-						</span>
-					</div>
-				));
-			} catch (error) {
-				return <p className={`mt-1 ${isDarkTheme ? 'text-gray-300' : 'text-gray-600'}`}>{result.result}</p>;
-			}
-		}
-		return <p className={`mt-1 ${isDarkTheme ? 'text-gray-300' : 'text-gray-600'}`}>{result.result}</p>;
-	};
+function Evaluatedraw({ results, isLoading, onClose, isDarkTheme, imagePreview }) 
+	{
+	const [imageError, setImageError] = useState(false);
 
 	return (
 		<div className={`fixed inset-0 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center p-4 ${isDarkTheme ? 'bg-gray-800' : 'bg-gray-200'}`}>
@@ -32,7 +17,34 @@ function Evaluatedraw({ results, isLoading, onClose, isDarkTheme }) {
 						<FaTimes />
 					</button>
 				</div>
+
 				<div className="p-4">
+					{imagePreview && !imageError && (
+						<div className="mb-4">
+							<h3 className={`text-lg font-semibold mb-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Analyzed Image:</h3>
+							<div className="flex justify-center" style={{ minHeight: '100px' }}>
+								<img
+									src={imagePreview}
+									alt="Analyzed Image"
+									className="max-w-full h-auto max-h-48 rounded-lg shadow-md"
+									style={{ border: '1px solid #ccc' }}
+									onError={(e) => {
+										console.error("Image load error:", e);
+										setImageError(true);
+									}}
+								/>
+							</div>
+						</div>
+					)}
+					
+					{imageError && (
+						<p className={`mb-4 text-center ${isDarkTheme ? 'text-red-400' : 'text-red-600'}`}>
+							Failed to load image preview.
+						</p>
+					)}
+
+					<h3 className={`text-lg font-semibold mb-2 ${isDarkTheme ? 'text-white' : 'text-gray-800'}`}>Questions and Answers:</h3>
+					
 					{isLoading ? (
 						<div className="flex justify-center items-center py-8">
 							<div className={`animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 ${isDarkTheme ? 'border-blue-400' : 'border-blue-500'}`}></div>
@@ -44,7 +56,9 @@ function Evaluatedraw({ results, isLoading, onClose, isDarkTheme }) {
 									<div className={`font-medium ${isDarkTheme ? 'text-blue-300' : 'text-blue-600'}`}>
 										Question: {result.expr}
 									</div>
-									{renderResult(result)}
+									<div className={`mt-1 ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'}`}>
+										Answer: {result.result}
+									</div>
 								</li>
 							))}
 						</ul>

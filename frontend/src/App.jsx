@@ -11,6 +11,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [isDarkTheme, setIsDarkTheme] = useState(true); // Set initial state to true for dark mode
+  const [imagePreview, setImagePreview] = useState(null);
 
   const onExcalidrawAPIChange = useCallback((api) => {
     setExcalidrawAPI(api);
@@ -25,14 +26,32 @@ function App() {
 
     setIsLoading(true);
     try {
+      // Get the current canvas size
+      const { width, height } = excalidrawAPI.getAppState();
+      
+      // Calculate a scale factor to reduce image size on mobile
+      const maxDimension = Math.max(width, height);
+      const scaleFactor = maxDimension > 1000 ? 1000 / maxDimension : 1;
+
       const blob = await exportToBlob({
         elements: excalidrawAPI.getSceneElements(),
-        appState: excalidrawAPI.getAppState(),
+        appState: {
+          ...excalidrawAPI.getAppState(),
+          exportWithDarkMode: false, // Ensure consistent export
+        },
         files: excalidrawAPI.getFiles(),
         mimeType: "image/png",
-        quality: 0.92,
+        quality: 0.8, // Slightly reduce quality to decrease file size
         exportWithBackground: true,
+        exportPadding: 10,
+        scale: scaleFactor,
       });
+
+      console.log("Blob created:", blob);
+      console.log("Blob size:", blob.size);
+
+      const imageUrl = URL.createObjectURL(blob);
+      setImagePreview(imageUrl);
 
       const formData = new FormData();
       formData.append("image", blob, "canvas.png");
@@ -51,6 +70,8 @@ function App() {
       setShowModal(true);
     } catch (error) {
       console.error("Error:", error);
+      setResults([{ expr: "Error", result: "An error occurred while processing the image. Please try again." }]);
+      setShowModal(true);
     } finally {
       setIsLoading(false);
     }
@@ -121,8 +142,12 @@ function App() {
             <Evaluatedraw
               results={results}
               isLoading={isLoading}
-              onClose={() => setShowModal(false)}
+              onClose={() => {
+                setShowModal(false);
+                setImagePreview(null); // Reset the imagePreview when closing the modal
+              }}
               isDarkTheme={isDarkTheme}
+              imagePreview={imagePreview}
             />
           </div>
         </div>

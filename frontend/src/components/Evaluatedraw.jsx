@@ -49,15 +49,15 @@ function Evaluatedraw({ results, isLoading, onClose, isDarkTheme, imagePreview }
 						<div className="flex justify-center items-center py-8">
 							<div className={`animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 ${isDarkTheme ? 'border-blue-400' : 'border-blue-500'}`}></div>
 						</div>
-					) : results.length > 0 ? (
+					) : results && results.length > 0 ? (
 						<ul className="space-y-4">
 							{results.map((result, index) => (
 								<li key={index} className={`p-3 rounded ${isDarkTheme ? 'bg-gray-600' : 'bg-gray-50'}`}>
 									<div className={`font-medium ${isDarkTheme ? 'text-blue-300' : 'text-blue-600'}`}>
-										Question: {result.expr}
+										{result.expr.startsWith("Error") ? "Error" : "Question"}: {result.expr}
 									</div>
 									<div className={`mt-1 ${isDarkTheme ? 'text-gray-300' : 'text-gray-700'}`}>
-										Answer: {result.result}
+										{result.expr.startsWith("Error") ? "Details" : "Answer"}: {result.result}
 									</div>
 								</li>
 							))}

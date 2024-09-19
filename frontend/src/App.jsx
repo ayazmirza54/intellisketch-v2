@@ -66,7 +66,25 @@ function App() {
       }
 
       const data = await response.json();
-      setResults(data.data);
+      const processedData = data.data.reduce((acc, item) => {
+        if (item.assign) {
+          const existingItem = acc.find(i => i.expr === item.expr);
+          if (existingItem) {
+            if (Array.isArray(existingItem.result)) {
+              existingItem.result.push(item.result);
+            } else {
+              existingItem.result = [existingItem.result, item.result];
+            }
+          } else {
+            acc.push({ expr: item.expr, result: [item.result] });
+          }
+        } else {
+          acc.push(item);
+        }
+        return acc;
+      }, []);
+
+      setResults(processedData);
       setShowModal(true);
     } catch (error) {
       console.error("Error:", error);
